@@ -1,4 +1,4 @@
-import classnames from "classnames/dedupe";
+import classnames from "classnames";
 import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useEffect, useRef } from "react";
@@ -17,7 +17,8 @@ const Board = () => {
     onDoubleClick,
     start,
     mineCount,
-    size,
+    width,
+    height,
   } = BoardStore;
 
   const { SHOW, HIDDEN, MARKED } = TILE_STATUS;
@@ -46,13 +47,24 @@ const Board = () => {
           />
         </div>
         <div>
-          <label>Board Size: </label>
+          <label>Width: </label>
           <input
             className="border border-black"
-            placeholder="Mines"
-            value={size}
+            placeholder="Width"
+            value={width}
             onChange={(e) => {
-              BoardStore.size = e.target.value;
+              BoardStore.width = e.target.value;
+            }}
+          />
+        </div>
+        <div>
+          <label>Height: </label>
+          <input
+            className="border border-black"
+            placeholder="Height"
+            value={height}
+            onChange={(e) => {
+              BoardStore.height = e.target.value;
             }}
           />
         </div>
@@ -62,8 +74,18 @@ const Board = () => {
         onClick={() => {
           start();
           clearInterval(intervalRef.current);
+
           const id = setInterval(() => {
-            BoardStore.time = BoardStore.time + 1;
+            if (BoardStore.time < 999 && !BoardStore.gameStatus) {
+              runInAction(() => {
+                BoardStore.time = BoardStore.time + 1;
+              });
+            } else {
+              clearInterval(intervalRef.current);
+              runInAction(() => {
+                BoardStore.gameStatus = "lose";
+              });
+            }
           }, 1000);
           intervalRef.current = id;
         }}
@@ -71,82 +93,83 @@ const Board = () => {
         {board.length ? "Restart" : "Start"}
       </button>
       <div className="text-3xl">Time: {time}</div>
-      <table>
-        <tbody>
-          {board.map((row, rowIndex) => (
-            <tr className="flex-row" key={`row_${rowIndex}`}>
-              {row.map((tile) => (
-                <td
-                  key={`${tile.x}_${tile.y}`}
-                  className={classnames(
-                    "border border-black w-10 h-10 cursor-pointer text-center text-white text-2xl",
-                    {
-                      "bg-zinc-300": tile.status === HIDDEN,
-                    },
-                    {
-                      "bg-zinc-500": !tile.isMine && tile.status === SHOW,
-                    },
-                    {
-                      "bg-red-600": tile.isMine && tile.status === SHOW,
-                    },
-                    {
-                      "bg-yellow-500": tile.status === MARKED,
-                    },
-                    {
-                      "bg-purple-500":
-                        gameStatus === "lose" &&
-                        tile.isMine &&
-                        tile.status === MARKED,
-                    },
-                  )}
-                  onDoubleClick={() => {
-                    onDoubleClick(tile);
-                  }}
-                  onContextMenu={(e) => {
-                    e.preventDefault();
+      <div className="flex justify-center">
+        <table>
+          <tbody>
+            {board.map((row, rowIndex) => (
+              <tr className="flex-row" key={`row_${rowIndex}`}>
+                {row.map((tile) => (
+                  <td
+                    key={`${tile.x}_${tile.y}`}
+                    className={classnames(
+                      "border border-black w-10 h-10 cursor-pointer text-center text-white text-2xl",
+                      {
+                        "bg-zinc-300": tile.status === HIDDEN,
+                      },
+                      {
+                        "bg-zinc-500": !tile.isMine && tile.status === SHOW,
+                      },
+                      {
+                        "bg-red-600": tile.isMine && tile.status === SHOW,
+                      },
+                      {
+                        "bg-yellow-500": tile.status === MARKED,
+                      },
+                      {
+                        "bg-purple-500":
+                          gameStatus === "lose" &&
+                          tile.isMine &&
+                          tile.status === MARKED,
+                      },
+                    )}
+                    onDoubleClick={() => {
+                      onDoubleClick(tile);
+                    }}
+                    onContextMenu={(e) => {
+                      e.preventDefault();
 
-                    if (gameStatus) {
-                      e.stopPropagation();
-                      return;
-                    }
-
-                    runInAction(() => {
-                      if (tile.status === MARKED) {
-                        tile.status = HIDDEN;
-                      } else {
-                        if (
-                          tile.status === HIDDEN &&
-                          markedNumber < Number(mineCount)
-                        ) {
-                          tile.status = MARKED;
-                        }
+                      if (gameStatus) {
+                        e.stopPropagation();
+                        return;
                       }
-                    });
-                  }}
-                  onClick={(e) => {
-                    if (gameStatus) {
-                      e.stopPropagation();
-                      return;
-                    }
-                    if (mineList.length === 0) {
-                      setMinePositions(tile);
-                      console.log("mineList>", mineList);
-                    }
-                    if (tile.status !== MARKED) {
+
                       runInAction(() => {
-                        tile.status = SHOW;
+                        if (tile.status === MARKED) {
+                          tile.status = HIDDEN;
+                        } else {
+                          if (
+                            tile.status === HIDDEN &&
+                            markedNumber < Number(mineCount)
+                          ) {
+                            tile.status = MARKED;
+                          }
+                        }
                       });
-                      onClick(tile);
-                    }
-                  }}
-                >
-                  {!tile.isMine && tile.status !== MARKED && tile.text}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+                    }}
+                    onClick={(e) => {
+                      if (gameStatus) {
+                        e.stopPropagation();
+                        return;
+                      }
+                      if (mineList.length === 0) {
+                        setMinePositions(tile);
+                      }
+                      if (tile.status !== MARKED) {
+                        runInAction(() => {
+                          tile.status = SHOW;
+                        });
+                        onClick(tile);
+                      }
+                    }}
+                  >
+                    {!tile.isMine && tile.status !== MARKED && tile.text}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };

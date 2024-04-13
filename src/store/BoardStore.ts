@@ -16,7 +16,8 @@ interface IPosition {
 class BoardStore {
   board: ITile[][] = [];
   mineCount = "10";
-  size = "20";
+  width = "20";
+  height = "20";
   time = 0;
   mineList: IPosition[] = [];
   gameStatus: "lose" | "win" | "" = "";
@@ -24,10 +25,11 @@ class BoardStore {
     makeAutoObservable(this);
   }
   setUp = () => {
-    const size = Number(this.size);
-    for (let i = 0; i < size; i++) {
+    const width = Number(this.width);
+    const height = Number(this.height);
+    for (let i = 0; i < width; i++) {
       const row = [];
-      for (let j = 0; j < size; j++) {
+      for (let j = 0; j < height; j++) {
         const tile: ITile = {
           x: i,
           y: j,
@@ -63,12 +65,13 @@ class BoardStore {
   countMineNumber = (tileList: ITile[]): number =>
     tileList.filter((tile) => tile.isMine).length;
   setMinePositions = (tile: ITile) => {
-    const size = Number(this.size);
+    const width = Number(this.width);
+    const height = Number(this.height);
     const numberOfMines = Number(this.mineCount);
 
     while (this.mineList.length < numberOfMines) {
-      const x = this.generateRandomNumber(size);
-      const y = this.generateRandomNumber(size);
+      const x = this.generateRandomNumber(width);
+      const y = this.generateRandomNumber(height);
       const minePosition: IPosition = { x, y };
       if (
         !this.mineList.some((position) =>
