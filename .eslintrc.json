@@ -1,7 +1,26 @@
 {
-  "extends": ["prettier"],
-  "plugins": ["prettier"],
+  "extends": [
+    "prettier",
+    "plugin:@typescript-eslint/recommended"
+  ],
+  "plugins": [
+    "prettier"
+  ],
+  "parserOptions": {
+    "ecmaVersion": "latest",
+    "sourceType": "module"
+  },
+  "env": {
+    "es6": true
+  },
   "rules": {
-    "prettier/prettier": ["error"]
+  
+    "prettier/prettier": [
+      "warn",
+      
+      {
+        "endOfLine": "auto"
+      }
+    ]
   }
 }
