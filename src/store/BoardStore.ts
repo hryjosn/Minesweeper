@@ -2,7 +2,6 @@ import { makeAutoObservable } from "mobx";
 import { IPosition, ITile, TILE_STATUS } from "../components/type";
 const { SHOW, HIDDEN, MARKED } = TILE_STATUS;
 
-
 class BoardStore {
   board: ITile[][] = [];
   mineCount = "10";
@@ -14,7 +13,7 @@ class BoardStore {
   constructor() {
     makeAutoObservable(this);
   }
-  setUp = () => {
+  setUp = (): void => {
     const width = Number(this.width);
     const height = Number(this.height);
     for (let i = 0; i < width; i++) {
@@ -32,14 +31,14 @@ class BoardStore {
       this.board = [...this.board, row];
     }
   };
-  start = () => {
+  start = (): void => {
     this.board = [];
     this.mineList = [];
     this.gameStatus = "";
     this.time = 0;
     this.setUp();
   };
-  onDoubleClick = (tile: ITile) => {
+  onDoubleClick = (tile: ITile): void => {
     const nearByTileList = this.getNearByTiles(tile);
     if (
       nearByTileList.filter((tile) => tile.status === MARKED).length ===
@@ -54,7 +53,7 @@ class BoardStore {
   };
   countMineNumber = (tileList: ITile[]): number =>
     tileList.filter((tile) => tile.isMine).length;
-  setMinePositions = (tile: ITile) => {
+  setMinePositions = (tile: ITile): void => {
     const width = Number(this.width);
     const height = Number(this.height);
     const numberOfMines = Number(this.mineCount);
@@ -83,10 +82,8 @@ class BoardStore {
       this.showResult();
     } else {
       clickedTile.status = SHOW;
-
       if (this.checkWin()) {
         this.gameStatus = "win";
-
         this.board.forEach((row) => {
           row.forEach((tile) => {
             if (tile.isMine && tile.status !== MARKED) tile.status = MARKED;
@@ -95,7 +92,7 @@ class BoardStore {
       }
     }
   };
-  get markedNumber() {
+  get markedNumber(): number {
     return this.board.reduce(
       (acc, cur) => cur.filter((tile) => tile.status === MARKED).length + acc,
       0,
@@ -121,13 +118,11 @@ class BoardStore {
     if (tile.isMine) {
       return;
     }
-
     const nearByTileList = this.getNearByTiles(tile);
-
-    const mineCount = nearByTileList.filter((tile) => tile.isMine).length;
+    const mineCount = this.countMineNumber(nearByTileList);
     if (mineCount === 0) {
       nearByTileList.forEach((nearByTile) => {
-        if (nearByTile.status !== MARKED) {
+        if (nearByTile.status === HIDDEN) {
           nearByTile.status = SHOW;
         }
         this.revealTile(nearByTile);
@@ -143,8 +138,8 @@ class BoardStore {
         const nearByTile = this.board[tile.x + xOffset]?.[tile.y + yOffset];
         if (
           nearByTile &&
-          nearByTile.status !== SHOW &&
-          (nearByTile.x !== tile.x || nearByTile.y !== tile.y)
+          nearByTile?.status !== SHOW &&
+          !this.positionMatch(nearByTile, tile)
         ) {
           tileList.push(nearByTile);
         }

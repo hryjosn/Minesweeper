@@ -35,7 +35,11 @@ const Board = () => {
     clearInterval(intervalRef.current);
 
     const id = setInterval(() => {
-      if (BoardStore.time < 999 && !BoardStore.gameStatus) {
+      if (BoardStore.gameStatus) {
+        clearInterval(intervalRef.current);
+        return;
+      }
+      if (time < 999) {
         runInAction(() => {
           BoardStore.time = BoardStore.time + 1;
         });
