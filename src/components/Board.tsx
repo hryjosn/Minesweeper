@@ -4,6 +4,7 @@ import { observer } from "mobx-react-lite";
 import { MouseEvent, useEffect, useRef } from "react";
 import BoardStore from "../store/BoardStore";
 import { ITile, TILE_STATUS } from "./type";
+const { SHOW, HIDDEN, MARKED } = TILE_STATUS;
 
 const Board = () => {
   const {
@@ -21,7 +22,6 @@ const Board = () => {
     height,
   } = BoardStore;
 
-  const { SHOW, HIDDEN, MARKED } = TILE_STATUS;
   const intervalRef = useRef<NodeJS.Timer>();
 
   useEffect(() => {
@@ -29,12 +29,10 @@ const Board = () => {
       clearInterval(intervalRef.current);
     };
   }, []);
-
-  const handleStartGame = () => {
-    start();
+  const setupTimer = () => {
     clearInterval(intervalRef.current);
 
-    const id = setInterval(() => {
+    intervalRef.current = setInterval(() => {
       if (BoardStore.gameStatus) {
         clearInterval(intervalRef.current);
         return;
@@ -50,7 +48,10 @@ const Board = () => {
         });
       }
     }, 1000);
-    intervalRef.current = id;
+  };
+  const handleStartGame = () => {
+    start();
+    setupTimer();
   };
 
   const handleTileRightClick = (
@@ -58,19 +59,15 @@ const Board = () => {
     tile: ITile,
   ) => {
     e.preventDefault();
-
     if (gameStatus) {
       e.stopPropagation();
       return;
     }
-
     runInAction(() => {
       if (tile.status === MARKED) {
         tile.status = HIDDEN;
-      } else {
-        if (tile.status === HIDDEN && markedNumber < Number(mineCount)) {
-          tile.status = MARKED;
-        }
+      } else if (tile.status === HIDDEN && markedNumber < Number(mineCount)) {
+        tile.status = MARKED;
       }
     });
   };
@@ -95,9 +92,8 @@ const Board = () => {
   };
 
   return (
-    <div className="text-center">
+    <div className="text-center py-5">
       <div className="text-3xl">{gameStatus}</div>
-      <h1>Mine Left: {Number(mineCount) - markedNumber}</h1>
       <div className="flex justify-center gap-5">
         <div>
           <label>Mines: </label>
@@ -139,7 +135,14 @@ const Board = () => {
       >
         {board.length ? "Restart" : "Start"}
       </button>
-      <div className="text-3xl">Time: {time}</div>
+      <div className="flex justify-center">
+        <div className="text-3xl mr-5">
+          Mine Left: {Number(mineCount) - markedNumber}
+        </div>
+
+        <div className="text-3xl">Time: {time}</div>
+      </div>
+
       <div className="flex justify-center">
         <table>
           <tbody>
