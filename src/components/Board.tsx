@@ -13,12 +13,13 @@ const Board = () => {
     mineList,
     onClick,
     gameStatus,
-    checkWin,
+    markedNumber,
     onDoubleClick,
     start,
+    mineCount,
+    size,
   } = BoardStore;
-  const NUMBER_OF_MINES = 30;
-  const BOARD_SIZE = 20;
+
   const [time, setTime] = useState(0);
   const { SHOW, HIDDEN, MARKED } = TILE_STATUS;
   const intervalRef = useRef<NodeJS.Timer>();
@@ -36,20 +37,35 @@ const Board = () => {
   return (
     <div className="text-center">
       <h1>{gameStatus}</h1>
-      <h1>
-        Mine Left:{" "}
-        {NUMBER_OF_MINES -
-          (board.reduce(
-            (acc, cur) =>
-              cur.filter((tile) => tile.status === MARKED).length + acc,
-            0,
-          ),
-          0)}
-      </h1>
+      <h1>Mine Left: {Number(mineCount) - markedNumber}</h1>
+      <div className="flex justify-center gap-5">
+        <div>
+          <label>Mines: </label>
+          <input
+            className="border border-black"
+            placeholder="Mines"
+            value={mineCount}
+            onChange={(e) => {
+              BoardStore.mineCount = e.target.value;
+            }}
+          />
+        </div>
+        <div>
+          <label>Board Size: </label>
+          <input
+            className="border border-black"
+            placeholder="Mines"
+            value={size}
+            onChange={(e) => {
+              BoardStore.size = e.target.value;
+            }}
+          />
+        </div>
+      </div>
       <button
-        className="border bg-zinc-200 border-black px-2 py-1 rounded mb-5"
+        className="border bg-zinc-200 border-black px-2 py-1 rounded my-5"
         onClick={() => {
-          start({ size: BOARD_SIZE });
+          start();
         }}
       >
         {board.length ? "Restart" : "Start"}
@@ -75,10 +91,11 @@ const Board = () => {
                     {
                       "bg-yellow-500": tile.status === MARKED,
                     },
-
                     {
                       "bg-purple-500":
-                        gameStatus && tile.isMine && tile.status === MARKED,
+                        gameStatus === "lose" &&
+                        tile.isMine &&
+                        tile.status === MARKED,
                     },
                   )}
                   onDoubleClick={() => {
@@ -86,20 +103,22 @@ const Board = () => {
                   }}
                   onContextMenu={(e) => {
                     e.preventDefault();
+
                     if (gameStatus) {
                       e.stopPropagation();
                       return;
                     }
+
                     runInAction(() => {
                       if (tile.status === MARKED) {
                         tile.status = HIDDEN;
                       } else {
-                        if (tile.status === HIDDEN) {
+                        if (
+                          tile.status === HIDDEN &&
+                          markedNumber < Number(mineCount)
+                        ) {
                           tile.status = MARKED;
                         }
-                      }
-                      if (checkWin()) {
-                        BoardStore.gameStatus = "You win";
                       }
                     });
                   }}
@@ -109,7 +128,7 @@ const Board = () => {
                       return;
                     }
                     if (mineList.length === 0) {
-                      setMinePositions(BOARD_SIZE, NUMBER_OF_MINES, tile);
+                      setMinePositions(tile);
                       console.log("mineList>", mineList);
                     }
                     if (tile.status !== MARKED) {

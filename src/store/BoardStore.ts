@@ -15,12 +15,15 @@ interface IPosition {
 }
 class BoardStore {
   board: ITile[][] = [];
+  mineCount = "10";
+  size = "20";
   mineList: IPosition[] = [];
-  gameStatus = "";
+  gameStatus: "lose" | "win" | "" = "";
   constructor() {
     makeAutoObservable(this);
   }
-  setUp = ({ size }: { size: number }) => {
+  setUp = () => {
+    const size = Number(this.size);
     for (let i = 0; i < size; i++) {
       const row = [];
       for (let j = 0; j < size; j++) {
@@ -36,11 +39,11 @@ class BoardStore {
       this.board = [...this.board, row];
     }
   };
-  start = ({ size }: { size: number }) => {
+  start = () => {
     this.board = [];
     this.mineList = [];
     this.gameStatus = "";
-    this.setUp({ size });
+    this.setUp();
   };
   onDoubleClick = (tile: ITile) => {
     const nearByTileList = this.getNearByTiles(tile);
@@ -50,27 +53,17 @@ class BoardStore {
     ) {
       nearByTileList.forEach((nearByTile) => {
         if (nearByTile.status !== MARKED) {
-          if (nearByTile.isMine) {
-            this.gameStatus = "You lose";
-            this.board.forEach((row) => {
-              row.forEach((tile) => {
-                if (tile.isMine) tile.status = SHOW;
-              });
-            });
-            return;
-          }
-          nearByTile.status = SHOW;
-
-          nearByTile.text = this.countMineNumber(
-            this.getNearByTiles(nearByTile),
-          ).toString();
+          this.onClick(nearByTile);
         }
       });
     }
   };
   countMineNumber = (tileList: ITile[]): number =>
     tileList.filter((tile) => tile.isMine).length;
-  setMinePositions = (size: number, numberOfMines: number, tile: ITile) => {
+  setMinePositions = (tile: ITile) => {
+    const size = Number(this.size);
+    const numberOfMines = Number(this.mineCount);
+
     while (this.mineList.length < numberOfMines) {
       const x = this.generateRandomNumber(size);
       const y = this.generateRandomNumber(size);
@@ -91,24 +84,40 @@ class BoardStore {
   onClick = (clickedTile: ITile) => {
     this.revealTile(clickedTile);
     if (clickedTile.isMine) {
-      this.gameStatus = "You lose";
-      this.board.forEach((row) => {
-        row.forEach((tile) => {
-          if (tile.isMine) tile.status = SHOW;
-        });
-      });
+      this.gameStatus = "lose";
+      this.showResult();
     } else {
+      clickedTile.status = SHOW;
+
       if (this.checkWin()) {
-        this.gameStatus = "You win";
+        this.gameStatus = "win";
+
+        this.board.forEach((row) => {
+          row.forEach((tile) => {
+            if (tile.isMine && tile.status !== MARKED) tile.status = MARKED;
+          });
+        });
       }
     }
+  };
+  get markedNumber() {
+    return this.board.reduce(
+      (acc, cur) => cur.filter((tile) => tile.status === MARKED).length + acc,
+      0,
+    );
+  }
+  showResult = () => {
+    this.board.forEach((row) => {
+      row.forEach((tile) => {
+        if (tile.isMine && tile.status !== MARKED) tile.status = SHOW;
+      });
+    });
   };
 
   checkWin = () => {
     return this.board.every((row) =>
       row.every(
-        (tile) =>
-          tile.status === SHOW || (tile.isMine && tile.status === MARKED),
+        (tile) => (tile.isMine && tile.status !== SHOW) || tile.status === SHOW,
       ),
     );
   };
@@ -123,7 +132,9 @@ class BoardStore {
     const mineCount = nearByTileList.filter((tile) => tile.isMine).length;
     if (mineCount === 0) {
       nearByTileList.forEach((nearByTile) => {
-        nearByTile.status = SHOW;
+        if (nearByTile.status !== MARKED) {
+          nearByTile.status = SHOW;
+        }
         this.revealTile(nearByTile);
       });
     } else {
