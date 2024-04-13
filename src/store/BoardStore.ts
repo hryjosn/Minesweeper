@@ -1,18 +1,8 @@
 import { makeAutoObservable } from "mobx";
-import { TILE_STATUS } from "../components/type";
+import { IPosition, ITile, TILE_STATUS } from "../components/type";
 const { SHOW, HIDDEN, MARKED } = TILE_STATUS;
 
-interface ITile {
-  x: number;
-  y: number;
-  isMine: boolean;
-  status: TILE_STATUS;
-  text: string;
-}
-interface IPosition {
-  x: number;
-  y: number;
-}
+
 class BoardStore {
   board: ITile[][] = [];
   mineCount = "10";

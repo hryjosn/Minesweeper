@@ -1,9 +1,9 @@
 import classnames from "classnames";
 import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
-import { useEffect, useRef } from "react";
+import { MouseEvent, useEffect, useRef } from "react";
 import BoardStore from "../store/BoardStore";
-import { TILE_STATUS } from "./type";
+import { ITile, TILE_STATUS } from "./type";
 
 const Board = () => {
   const {
@@ -29,6 +29,66 @@ const Board = () => {
       clearInterval(intervalRef.current);
     };
   }, []);
+
+  const handleStartGame = () => {
+    start();
+    clearInterval(intervalRef.current);
+
+    const id = setInterval(() => {
+      if (BoardStore.time < 999 && !BoardStore.gameStatus) {
+        runInAction(() => {
+          BoardStore.time = BoardStore.time + 1;
+        });
+      } else {
+        clearInterval(intervalRef.current);
+        runInAction(() => {
+          BoardStore.gameStatus = "lose";
+        });
+      }
+    }, 1000);
+    intervalRef.current = id;
+  };
+
+  const handleTileRightClick = (
+    e: MouseEvent<HTMLTableCellElement, globalThis.MouseEvent>,
+    tile: ITile,
+  ) => {
+    e.preventDefault();
+
+    if (gameStatus) {
+      e.stopPropagation();
+      return;
+    }
+
+    runInAction(() => {
+      if (tile.status === MARKED) {
+        tile.status = HIDDEN;
+      } else {
+        if (tile.status === HIDDEN && markedNumber < Number(mineCount)) {
+          tile.status = MARKED;
+        }
+      }
+    });
+  };
+
+  const handleTileClick = (
+    e: MouseEvent<HTMLTableCellElement, globalThis.MouseEvent>,
+    tile: ITile,
+  ) => {
+    if (gameStatus) {
+      e.stopPropagation();
+      return;
+    }
+    if (mineList.length === 0) {
+      setMinePositions(tile);
+    }
+    if (tile.status !== MARKED) {
+      runInAction(() => {
+        tile.status = SHOW;
+      });
+      onClick(tile);
+    }
+  };
 
   return (
     <div className="text-center">
@@ -71,24 +131,7 @@ const Board = () => {
       </div>
       <button
         className="border bg-zinc-200 border-black px-2 py-1 rounded my-5"
-        onClick={() => {
-          start();
-          clearInterval(intervalRef.current);
-
-          const id = setInterval(() => {
-            if (BoardStore.time < 999 && !BoardStore.gameStatus) {
-              runInAction(() => {
-                BoardStore.time = BoardStore.time + 1;
-              });
-            } else {
-              clearInterval(intervalRef.current);
-              runInAction(() => {
-                BoardStore.gameStatus = "lose";
-              });
-            }
-          }, 1000);
-          intervalRef.current = id;
-        }}
+        onClick={handleStartGame}
       >
         {board.length ? "Restart" : "Start"}
       </button>
@@ -125,42 +168,8 @@ const Board = () => {
                     onDoubleClick={() => {
                       onDoubleClick(tile);
                     }}
-                    onContextMenu={(e) => {
-                      e.preventDefault();
-
-                      if (gameStatus) {
-                        e.stopPropagation();
-                        return;
-                      }
-
-                      runInAction(() => {
-                        if (tile.status === MARKED) {
-                          tile.status = HIDDEN;
-                        } else {
-                          if (
-                            tile.status === HIDDEN &&
-                            markedNumber < Number(mineCount)
-                          ) {
-                            tile.status = MARKED;
-                          }
-                        }
-                      });
-                    }}
-                    onClick={(e) => {
-                      if (gameStatus) {
-                        e.stopPropagation();
-                        return;
-                      }
-                      if (mineList.length === 0) {
-                        setMinePositions(tile);
-                      }
-                      if (tile.status !== MARKED) {
-                        runInAction(() => {
-                          tile.status = SHOW;
-                        });
-                        onClick(tile);
-                      }
-                    }}
+                    onContextMenu={(e) => handleTileRightClick(e, tile)}
+                    onClick={(e) => handleTileClick(e, tile)}
                   >
                     {!tile.isMine && tile.status !== MARKED && tile.text}
                   </td>
