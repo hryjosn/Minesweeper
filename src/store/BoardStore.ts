@@ -39,16 +39,18 @@ class BoardStore {
     this.setUp();
   };
   onDoubleClick = (tile: ITile): void => {
-    const nearByTileList = this.getNearByTiles(tile);
-    if (
-      nearByTileList.filter((tile) => tile.status === MARKED).length ===
-      Number(tile.text)
-    ) {
-      nearByTileList.forEach((nearByTile) => {
-        if (nearByTile.status !== MARKED) {
-          this.onClick(nearByTile);
-        }
-      });
+    if (tile.text) {
+      const nearByTileList = this.getNearByTiles(tile);
+      if (
+        nearByTileList.filter((tile) => tile.status === MARKED).length ===
+        Number(tile.text)
+      ) {
+        nearByTileList.forEach((nearByTile) => {
+          if (nearByTile.status !== MARKED) {
+            this.onClick(nearByTile);
+          }
+        });
+      }
     }
   };
   countMineNumber = (tileList: ITile[]): number =>
@@ -76,12 +78,12 @@ class BoardStore {
   };
 
   onClick = (clickedTile: ITile) => {
-    this.revealTile(clickedTile);
     if (clickedTile.isMine) {
       this.gameStatus = "lose";
       this.showResult();
     } else {
       clickedTile.status = SHOW;
+      this.revealTile(clickedTile);
       if (this.checkWin()) {
         this.gameStatus = "win";
         this.board.forEach((row) => {
