@@ -1,8 +1,12 @@
 import { makeAutoObservable } from "mobx";
 import { IPosition, ITile, TILE_STATUS } from "../components/type";
+
+// Destructuring TILE_STATUS object for easier access
 const { SHOW, HIDDEN, MARKED } = TILE_STATUS;
 
+// Define the BoardStore class
 class BoardStore {
+  // Initialize state variables
   board: ITile[][] = [];
   mineCount = "10";
   width = "20";
@@ -10,9 +14,13 @@ class BoardStore {
   time = 0;
   mineList: IPosition[] = [];
   gameStatus: "lose" | "win" | "" = "";
+
+  // Constructor to make the class observable
   constructor() {
     makeAutoObservable(this);
   }
+
+  // Method to set up the game board
   setUp = (): void => {
     const width = Number(this.width);
     const height = Number(this.height);
@@ -31,6 +39,8 @@ class BoardStore {
       this.board = [...this.board, row];
     }
   };
+
+  // Method to start a new game
   start = (): void => {
     this.board = [];
     this.mineList = [];
@@ -38,6 +48,8 @@ class BoardStore {
     this.time = 0;
     this.setUp();
   };
+
+  // Method to handle double-click events on tiles
   onDoubleClick = (tile: ITile): void => {
     if (tile.text) {
       const nearByTileList = this.getNearByTiles(tile);
@@ -53,8 +65,8 @@ class BoardStore {
       }
     }
   };
-  countMineNumber = (tileList: ITile[]): number =>
-    tileList.filter((tile) => tile.isMine).length;
+
+  // Method to randomly place mines on the board
   setMinePositions = (tile: ITile): void => {
     const width = Number(this.width);
     const height = Number(this.height);
@@ -77,6 +89,7 @@ class BoardStore {
     }
   };
 
+  // Method to handle left click events on tiles
   onClick = (clickedTile: ITile) => {
     if (clickedTile.isMine) {
       this.gameStatus = "lose";
@@ -94,12 +107,8 @@ class BoardStore {
       }
     }
   };
-  get markedNumber(): number {
-    return this.board.reduce(
-      (acc, cur) => cur.filter((tile) => tile.status === MARKED).length + acc,
-      0,
-    );
-  }
+
+  // Method to reveal the results of the game
   showResult = () => {
     this.board.forEach((row) => {
       row.forEach((tile) => {
@@ -108,6 +117,7 @@ class BoardStore {
     });
   };
 
+  // Method to check if the player has won the game
   checkWin = () => {
     return this.board.every((row) =>
       row.every(
@@ -116,6 +126,7 @@ class BoardStore {
     );
   };
 
+  // Method to reveal tiles and their neighbors recursively
   revealTile = (tile: ITile) => {
     if (tile.isMine) {
       return;
@@ -133,6 +144,8 @@ class BoardStore {
       tile.text = mineCount.toString();
     }
   };
+
+  // Method to get neighboring tiles of a given tile
   getNearByTiles = (tile: ITile) => {
     const tileList: ITile[] = [];
     for (let xOffset = -1; xOffset <= 1; xOffset++) {
@@ -149,8 +162,25 @@ class BoardStore {
     }
     return tileList;
   };
+
+  // Method to check if two positions match
   positionMatch = (a: IPosition, b: IPosition) => a.x === b.x && a.y === b.y;
+
+  // Method to generate a random number within a specified range
   generateRandomNumber = (range: number) => Math.floor(Math.random() * range);
+
+  // Method to count the number of mines around a tile
+  countMineNumber = (tileList: ITile[]): number =>
+    tileList.filter((tile) => tile.isMine).length;
+  // Computed property to get the number of tiles marked as mines
+  get markedNumber(): number {
+    return this.board.reduce(
+      (acc, cur) => cur.filter((tile) => tile.status === MARKED).length + acc,
+      0,
+    );
+  }
 }
+
 const store = new BoardStore();
+
 export default store;
