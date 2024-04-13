@@ -1,10 +1,11 @@
 import { makeAutoObservable } from "mobx";
 import { TILE_STATUS } from "../components/type";
+const { SHOW, HIDDEN, MARKED } = TILE_STATUS;
+
 interface ITile {
   x: number;
   y: number;
   isMine: boolean;
-
   status: TILE_STATUS;
   text: string;
 }
@@ -19,7 +20,7 @@ class BoardStore {
   constructor() {
     makeAutoObservable(this);
   }
-  setUp = ({ size }: { size: number; numberOfMines: number }) => {
+  setUp = ({ size }: { size: number }) => {
     for (let i = 0; i < size; i++) {
       const row = [];
       for (let j = 0; j < size; j++) {
@@ -27,7 +28,7 @@ class BoardStore {
           x: i,
           y: j,
           isMine: false,
-          status: TILE_STATUS.HIDDEN,
+          status: HIDDEN,
           text: "",
         };
         row.push(tile);
@@ -35,6 +36,40 @@ class BoardStore {
       this.board = [...this.board, row];
     }
   };
+  start = ({ size }: { size: number }) => {
+    this.board = [];
+    this.mineList = [];
+    this.gameStatus = "";
+    this.setUp({ size });
+  };
+  onDoubleClick = (tile: ITile) => {
+    const nearByTileList = this.getNearByTiles(tile);
+    if (
+      nearByTileList.filter((tile) => tile.status === MARKED).length ===
+      Number(tile.text)
+    ) {
+      nearByTileList.forEach((nearByTile) => {
+        if (nearByTile.status !== MARKED) {
+          if (nearByTile.isMine) {
+            this.gameStatus = "You lose";
+            this.board.forEach((row) => {
+              row.forEach((tile) => {
+                if (tile.isMine) tile.status = SHOW;
+              });
+            });
+            return;
+          }
+          nearByTile.status = SHOW;
+
+          nearByTile.text = this.countMineNumber(
+            this.getNearByTiles(nearByTile),
+          ).toString();
+        }
+      });
+    }
+  };
+  countMineNumber = (tileList: ITile[]): number =>
+    tileList.filter((tile) => tile.isMine).length;
   setMinePositions = (size: number, numberOfMines: number, tile: ITile) => {
     while (this.mineList.length < numberOfMines) {
       const x = this.generateRandomNumber(size);
@@ -59,7 +94,7 @@ class BoardStore {
       this.gameStatus = "You lose";
       this.board.forEach((row) => {
         row.forEach((tile) => {
-          if (tile.isMine) tile.status = TILE_STATUS.SHOW;
+          if (tile.isMine) tile.status = SHOW;
         });
       });
     } else {
@@ -73,8 +108,7 @@ class BoardStore {
     return this.board.every((row) =>
       row.every(
         (tile) =>
-          tile.status === TILE_STATUS.SHOW ||
-          (tile.isMine && tile.status === TILE_STATUS.MARKED),
+          tile.status === SHOW || (tile.isMine && tile.status === MARKED),
       ),
     );
   };
@@ -89,9 +123,7 @@ class BoardStore {
     const mineCount = nearByTileList.filter((tile) => tile.isMine).length;
     if (mineCount === 0) {
       nearByTileList.forEach((nearByTile) => {
-        if (nearByTile.status !== TILE_STATUS.MARKED) {
-          nearByTile.status = TILE_STATUS.SHOW;
-        }
+        nearByTile.status = SHOW;
         this.revealTile(nearByTile);
       });
     } else {
@@ -105,7 +137,7 @@ class BoardStore {
         const nearByTile = this.board[tile.x + xOffset]?.[tile.y + yOffset];
         if (
           nearByTile &&
-          nearByTile.status !== TILE_STATUS.SHOW &&
+          nearByTile.status !== SHOW &&
           (nearByTile.x !== tile.x || nearByTile.y !== tile.y)
         ) {
           tileList.push(nearByTile);

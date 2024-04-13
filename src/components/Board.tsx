@@ -8,21 +8,21 @@ import { TILE_STATUS } from "./type";
 const Board = () => {
   const {
     board,
-    setUp,
+
     setMinePositions,
     mineList,
     onClick,
     gameStatus,
     checkWin,
+    onDoubleClick,
+    start,
   } = BoardStore;
-  const NUMBER_OF_MINES = 10;
+  const NUMBER_OF_MINES = 30;
   const BOARD_SIZE = 20;
   const [time, setTime] = useState(0);
-
+  const { SHOW, HIDDEN, MARKED } = TILE_STATUS;
   const intervalRef = useRef<NodeJS.Timer>();
-  useEffect(() => {
-    setUp({ size: BOARD_SIZE, numberOfMines: NUMBER_OF_MINES });
-  }, [setUp, setMinePositions]);
+
   useEffect(() => {
     const id = setInterval(() => {
       setTime((time) => time + 1);
@@ -41,18 +41,18 @@ const Board = () => {
         {NUMBER_OF_MINES -
           (board.reduce(
             (acc, cur) =>
-              cur.filter((tile) => tile.status === TILE_STATUS.MARKED).length +
-              acc,
+              cur.filter((tile) => tile.status === MARKED).length + acc,
             0,
           ),
           0)}
       </h1>
       <button
+        className="border bg-zinc-200 border-black px-2 py-1 rounded mb-5"
         onClick={() => {
-          console.log("reset");
+          start({ size: BOARD_SIZE });
         }}
       >
-        Reset
+        {board.length ? "Restart" : "Start"}
       </button>
       <table>
         <tbody>
@@ -64,22 +64,25 @@ const Board = () => {
                   className={classnames(
                     "border border-black w-10 h-10 cursor-pointer text-center text-white text-2xl",
                     {
-                      "bg-zinc-300": tile.status === TILE_STATUS.HIDDEN,
+                      "bg-zinc-300": tile.status === HIDDEN,
                     },
                     {
-                      "bg-zinc-500":
-                        !tile.isMine && tile.status === TILE_STATUS.SHOW,
+                      "bg-zinc-500": !tile.isMine && tile.status === SHOW,
                     },
                     {
-                      "bg-red-600":
-                        tile.isMine && tile.status === TILE_STATUS.SHOW,
+                      "bg-red-600": tile.isMine && tile.status === SHOW,
                     },
                     {
-                      "bg-yellow-500": tile.status === TILE_STATUS.MARKED,
+                      "bg-yellow-500": tile.status === MARKED,
+                    },
+
+                    {
+                      "bg-purple-500":
+                        gameStatus && tile.isMine && tile.status === MARKED,
                     },
                   )}
                   onDoubleClick={() => {
-                    console.log("hi");
+                    onDoubleClick(tile);
                   }}
                   onContextMenu={(e) => {
                     e.preventDefault();
@@ -88,11 +91,11 @@ const Board = () => {
                       return;
                     }
                     runInAction(() => {
-                      if (tile.status === TILE_STATUS.MARKED) {
-                        tile.status = TILE_STATUS.HIDDEN;
+                      if (tile.status === MARKED) {
+                        tile.status = HIDDEN;
                       } else {
-                        if (tile.status === TILE_STATUS.HIDDEN) {
-                          tile.status = TILE_STATUS.MARKED;
+                        if (tile.status === HIDDEN) {
+                          tile.status = MARKED;
                         }
                       }
                       if (checkWin()) {
@@ -107,18 +110,17 @@ const Board = () => {
                     }
                     if (mineList.length === 0) {
                       setMinePositions(BOARD_SIZE, NUMBER_OF_MINES, tile);
+                      console.log("mineList>", mineList);
                     }
-                    if (tile.status !== TILE_STATUS.MARKED) {
+                    if (tile.status !== MARKED) {
                       runInAction(() => {
-                        tile.status = TILE_STATUS.SHOW;
+                        tile.status = SHOW;
                       });
                       onClick(tile);
                     }
                   }}
                 >
-                  {!tile.isMine &&
-                    tile.status !== TILE_STATUS.MARKED &&
-                    tile.text}
+                  {!tile.isMine && tile.status !== MARKED && tile.text}
                 </td>
               ))}
             </tr>
