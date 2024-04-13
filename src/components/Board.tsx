@@ -1,14 +1,14 @@
 import classnames from "classnames/dedupe";
 import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import BoardStore from "../store/BoardStore";
 import { TILE_STATUS } from "./type";
 
 const Board = () => {
   const {
     board,
-
+    time,
     setMinePositions,
     mineList,
     onClick,
@@ -20,15 +20,10 @@ const Board = () => {
     size,
   } = BoardStore;
 
-  const [time, setTime] = useState(0);
   const { SHOW, HIDDEN, MARKED } = TILE_STATUS;
   const intervalRef = useRef<NodeJS.Timer>();
 
   useEffect(() => {
-    const id = setInterval(() => {
-      setTime((time) => time + 1);
-    }, 1000);
-    intervalRef.current = id;
     return () => {
       clearInterval(intervalRef.current);
     };
@@ -36,7 +31,7 @@ const Board = () => {
 
   return (
     <div className="text-center">
-      <h1>{gameStatus}</h1>
+      <div className="text-3xl">{gameStatus}</div>
       <h1>Mine Left: {Number(mineCount) - markedNumber}</h1>
       <div className="flex justify-center gap-5">
         <div>
@@ -66,10 +61,16 @@ const Board = () => {
         className="border bg-zinc-200 border-black px-2 py-1 rounded my-5"
         onClick={() => {
           start();
+          clearInterval(intervalRef.current);
+          const id = setInterval(() => {
+            BoardStore.time = BoardStore.time + 1;
+          }, 1000);
+          intervalRef.current = id;
         }}
       >
         {board.length ? "Restart" : "Start"}
       </button>
+      <div className="text-3xl">Time: {time}</div>
       <table>
         <tbody>
           {board.map((row, rowIndex) => (

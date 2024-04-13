@@ -17,6 +17,7 @@ class BoardStore {
   board: ITile[][] = [];
   mineCount = "10";
   size = "20";
+  time = 0;
   mineList: IPosition[] = [];
   gameStatus: "lose" | "win" | "" = "";
   constructor() {
@@ -43,6 +44,7 @@ class BoardStore {
     this.board = [];
     this.mineList = [];
     this.gameStatus = "";
+    this.time = 0;
     this.setUp();
   };
   onDoubleClick = (tile: ITile) => {
